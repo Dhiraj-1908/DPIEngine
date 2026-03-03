@@ -1,0 +1,15 @@
+# env files
+frontend/.env
+frontend/.env.production
+
+# dependencies
+frontend/node_modules/
+backend/venv/
+proxy/venv/
+
+# python
+__pycache__/
+*.pycproxy/venv/
+backend/venv/
+__pycache__/
+*.pyc
