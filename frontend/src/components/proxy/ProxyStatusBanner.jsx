@@ -35,7 +35,7 @@ export default function ProxyStatusBanner() {
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>
             {isOnline
               ? 'Intercepting browser traffic via Chrome extension'
-              : 'Connect the Packet Lab extension to enable live DPI'}
+              : 'Connect the DPI Engine extension to enable live DPI'}
           </div>
         </div>
       </div>

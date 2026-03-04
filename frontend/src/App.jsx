@@ -55,7 +55,7 @@ export default function App() {
             fontFamily: "'IBM Plex Mono', monospace",
             fontWeight: 700, fontSize: 13, letterSpacing: '1.5px',
             color: accent, transition: 'color 0.3s',
-          }}>PACKET LAB</div>
+          }}>DPI Engine</div>
         </div>
 
         {/* Tabs */}
