@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Packet Lab DPI Engine",
+  "name": "DPI Engine",
   "version": "1.0.0",
-  "description": "Real-time DPI proxy engine for Packet Lab — intercepts and classifies browser traffic",
+  "description": "Real-time DPI proxy engine to intercepts and classifies browser traffic",
 
   "permissions": [
     "webRequest",
@@ -38,7 +38,7 @@
 
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Packet Lab DPI Engine"
+    "default_title": "DPI Engine"
   },
 
   "icons": {}

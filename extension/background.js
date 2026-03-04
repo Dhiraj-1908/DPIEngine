@@ -208,7 +208,7 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
   return true
 })
 
-// ── Auto-announce extension ID to any open Packet Lab tab ──
+// ── Auto-announce extension ID to any open DPI Engine tab ──
 function announceToTab(tabId) {
   chrome.tabs.sendMessage(tabId, {
     type: 'EXTENSION_ANNOUNCE',

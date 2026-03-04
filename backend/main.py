@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import analyze, ip_intel
 import datetime
 
-app = FastAPI(title="Packet Lab API", version="2.0")
+app = FastAPI(title="DPI Engine API", version="2.0")
 
 app.add_middleware(
     CORSMiddleware,
