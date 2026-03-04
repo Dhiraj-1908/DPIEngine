@@ -11,44 +11,71 @@ const APP_SIGNATURES = {
   reddit:    ['reddit.com', 'redd.it', 'redditmedia.com'],
 }
 
-function classifyHost(hostname) {
-  const h = hostname.toLowerCase().replace(/^www\./, '')
-  for (const [app, domains] of Object.entries(APP_SIGNATURES)) {
-    if (domains.some(d => h === d || h.endsWith('.' + d))) return app
+let customBlocked = []
+let customRules   = {}
+let rules         = { tiktok:false, instagram:false, youtube:false, facebook:false, twitter:false, netflix:false, discord:false, reddit:false }
+let packets       = []
+let stats         = { total:0, forwarded:0, blocked:0 }
+let enabled       = true
+let packetCounter = 0
+
+// Track requestIds seen in onBeforeRequest
+// If the same requestId later appears in onErrorOccurred as BLOCKED,
+// we remove the FORWARD log and replace with BLOCK
+const pendingRequests = new Map()  // requestId -> packetIndex
+
+function getSignatures() {
+  const sigs = { ...APP_SIGNATURES }
+  for (const domain of customBlocked) {
+    sigs[domain] = [domain]
   }
-  return 'other'
+  return sigs
 }
 
-let rules   = { tiktok:false, instagram:false, youtube:false, facebook:false, twitter:false, netflix:false, discord:false, reddit:false }
-let packets = []   // in-memory only, NOT persisted to storage
-let stats   = { total:0, forwarded:0, blocked:0 }
-let enabled = true
+function normalizeHost(h) {
+  return h.toLowerCase().replace(/^www\./, '')
+}
 
-// Keep service worker alive
+function matchesDomain(hostname, domain) {
+  const h = normalizeHost(hostname)
+  const d = normalizeHost(domain)
+  return h === d || h.endsWith('.' + d)
+}
+
+function classifyHost(hostname) {
+  for (const [app, domains] of Object.entries(getSignatures())) {
+    if (domains.some(d => matchesDomain(hostname, d))) return app
+  }
+  return null
+}
+
 function keepAlive() {
   setTimeout(() => { chrome.runtime.getPlatformInfo(() => keepAlive()) }, 20000)
 }
 keepAlive()
 
-// Load only rules + enabled from storage (NOT packets)
-chrome.storage.local.get(['rules','enabled'], (data) => {
-  if (data.rules) rules = { ...rules, ...data.rules }
-  if (data.enabled !== undefined) enabled = data.enabled
+chrome.storage.local.get(['rules', 'enabled', 'customBlocked', 'customRules'], (data) => {
+  if (data.rules)                 rules         = { ...rules, ...data.rules }
+  if (data.enabled !== undefined) enabled       = data.enabled
+  if (data.customBlocked)         customBlocked = data.customBlocked
+  if (data.customRules)           customRules   = data.customRules
+  for (const domain of customBlocked) {
+    if (!(domain in rules)) rules[domain] = customRules[domain] !== false
+  }
   applyBlockingRules()
 })
 
 async function applyBlockingRules() {
-  const existing = await chrome.declarativeNetRequest.getDynamicRules()
+  const existing  = await chrome.declarativeNetRequest.getDynamicRules()
   const removeIds = existing.map(r => r.id)
-  const addRules = []
+  const addRules  = []
   let id = 1
   for (const [app, blocked] of Object.entries(rules)) {
     if (!blocked || !enabled) continue
-    const domains = APP_SIGNATURES[app] || []
+    const domains = getSignatures()[app] || []
     for (const domain of domains) {
       addRules.push({
-        id: id++,
-        priority: 1,
+        id: id++, priority: 1,
         action: { type: 'block' },
         condition: {
           urlFilter: `||${domain}`,
@@ -60,28 +87,64 @@ async function applyBlockingRules() {
   await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: removeIds, addRules })
 }
 
-// Log ALL traffic — no filtering
+// Step 1: onBeforeRequest — tentatively log as FORWARD, remember the packet index
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     try {
-      const url      = new URL(details.url)
-      const hostname = url.hostname
+      const hostname = new URL(details.url).hostname
       if (!hostname) return
+      const app = classifyHost(hostname)
+      if (!app) return
 
-      const app     = classifyHost(hostname)
-      const blocked = enabled && app !== 'other' && rules[app] === true
-      const action  = blocked ? 'BLOCK' : 'FORWARD'
-      const ts      = new Date().toTimeString().slice(0, 8)
-
+      const ts = new Date().toTimeString().slice(0, 8)
       stats.total++
-      if (blocked) stats.blocked++
-      else stats.forwarded++
+      stats.forwarded++
+      packetCounter++
+      const pkt = { seq: packetCounter, time: ts, host: hostname, app, action: 'FORWARD' }
+      packets.push(pkt)
+      if (packets.length > 2000) packets.shift()
 
-      // Push to end — oldest first, newest last
-      packets.push({ time: ts, host: hostname, app, action })
-      if (packets.length > 1000) packets.shift()
+      // Remember this requestId so onErrorOccurred can flip it to BLOCK
+      pendingRequests.set(details.requestId, packetCounter)
 
-      // Do NOT call chrome.storage.local.set here — too slow, causes throttling
+      // Clean up after 10s in case onCompleted/onErrorOccurred never fires
+      setTimeout(() => pendingRequests.delete(details.requestId), 10000)
+    } catch(e) {}
+  },
+  { urls: ['<all_urls>'] }
+)
+
+// Step 2: onErrorOccurred — if ERR_BLOCKED_BY_CLIENT, flip the FORWARD log to BLOCK
+chrome.webRequest.onErrorOccurred.addListener(
+  (details) => {
+    try {
+      if (details.error !== 'net::ERR_BLOCKED_BY_CLIENT') return
+
+      const seq = pendingRequests.get(details.requestId)
+      pendingRequests.delete(details.requestId)
+
+      if (seq !== undefined) {
+        // Find the packet we logged as FORWARD and flip it
+        const pkt = packets.find(p => p.seq === seq)
+        if (pkt) {
+          pkt.action = 'BLOCK'
+          // Fix stats: was counted as forwarded, should be blocked
+          stats.forwarded--
+          stats.blocked++
+        }
+      } else {
+        // Fallback: declarativeNetRequest can block before onBeforeRequest fires
+        // in some cases — log it fresh
+        const hostname = new URL(details.url).hostname
+        if (!hostname) return
+        const app = classifyHost(hostname) || 'other'
+        const ts  = new Date().toTimeString().slice(0, 8)
+        stats.total++
+        stats.blocked++
+        packetCounter++
+        packets.push({ seq: packetCounter, time: ts, host: hostname, app, action: 'BLOCK' })
+        if (packets.length > 2000) packets.shift()
+      }
     } catch(e) {}
   },
   { urls: ['<all_urls>'] }
@@ -89,15 +152,46 @@ chrome.webRequest.onBeforeRequest.addListener(
 
 function handleMessage(msg, sendResponse) {
   if (msg.type === 'GET_STATUS') {
-    // Send all packets in memory
-    sendResponse({ online: enabled, stats, rules, packets: [...packets] })
+    const lastSeq    = msg.lastSeq || 0
+    const newPackets = packets.filter(p => p.seq > lastSeq)
+    sendResponse({ online: enabled, stats, rules, customBlocked, customRules, packets: newPackets, totalSeq: packetCounter })
     return
   }
   if (msg.type === 'SET_RULE') {
     rules[msg.app] = msg.blocked
-    chrome.storage.local.set({ rules })
+    if (customBlocked.includes(msg.app)) customRules[msg.app] = msg.blocked
+    chrome.storage.local.set({ rules, customRules })
     applyBlockingRules()
     sendResponse({ ok: true })
+    return
+  }
+  if (msg.type === 'ADD_CUSTOM_BLOCK') {
+    const domain = msg.domain
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .split('/')[0]
+      .trim()
+    if (!domain || customBlocked.includes(domain)) {
+      sendResponse({ ok: false, customBlocked, customRules, rules })
+      return
+    }
+    customBlocked.unshift(domain)
+    customRules[domain] = true
+    rules[domain] = true
+    chrome.storage.local.set({ customBlocked, customRules, rules })
+    applyBlockingRules()
+    sendResponse({ ok: true, customBlocked, customRules, rules })
+    return
+  }
+  if (msg.type === 'REMOVE_CUSTOM_BLOCK') {
+    const domain = msg.domain.toLowerCase().replace(/^www\./, '').trim()
+    customBlocked = customBlocked.filter(d => d !== domain)
+    delete customRules[domain]
+    delete rules[domain]
+    chrome.storage.local.set({ customBlocked, customRules, rules })
+    applyBlockingRules()
+    sendResponse({ ok: true, customBlocked, customRules, rules })
     return
   }
   if (msg.type === 'SET_ENABLED') {
@@ -108,8 +202,10 @@ function handleMessage(msg, sendResponse) {
     return
   }
   if (msg.type === 'CLEAR_STATS') {
-    stats   = { total:0, forwarded:0, blocked:0 }
+    stats = { total:0, forwarded:0, blocked:0 }
     packets = []
+    packetCounter = 0
+    pendingRequests.clear()
     sendResponse({ ok: true })
     return
   }
