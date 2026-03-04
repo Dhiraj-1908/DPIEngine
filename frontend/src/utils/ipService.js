@@ -1,25 +1,16 @@
 import { computeThreatScore } from './ipUtils'
 
-const BASE = import.meta.env.VITE_IP_API || 'https://ip-api.com/json'
+const BACKEND = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export async function fetchIPIntel(ip) {
-  const fields = 'status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,asname,reverse,mobile,proxy,hosting,query'
-  const res  = await fetch(`${BASE}/${ip}?fields=${fields}`)
-  const data = await res.json()
-
-  if (data.status !== 'success') throw new Error(data.message || 'Lookup failed')
-
-  const enriched = {
-    ...data,
-    vpn:         data.proxy,
-    tor:         false,
-    threatScore: computeThreatScore({ ...data, vpn: data.proxy }),
-  }
-  return enriched
+  const res  = await fetch(`${BACKEND}/ip/lookup/${ip}`)
+  if (!res.ok) throw new Error('Lookup failed')
+  return await res.json()
 }
 
 export async function fetchMyIP() {
-  const res  = await fetch('https://ip-api.com/json/?fields=query')
+  const res  = await fetch(`${BACKEND}/ip/me`)
+  if (!res.ok) throw new Error('Failed to get IP')
   const data = await res.json()
-  return data.query
+  return data.ip
 }
