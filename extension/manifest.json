@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Packet Lab DPI Engine",
+  "version": "1.0.0",
+  "description": "Real-time DPI proxy engine for Packet Lab — intercepts and classifies browser traffic",
+
+  "permissions": [
+    "webRequest",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "storage",
+    "tabs"
+  ],
+
+  "host_permissions": ["<all_urls>"],
+
+  "externally_connectable": {
+    "matches": [
+      "http://localhost/*",
+      "http://127.0.0.1/*",
+      "https://*.vercel.app/*"
+    ]
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Packet Lab DPI Engine"
+  },
+
+  "icons": {}
+}
