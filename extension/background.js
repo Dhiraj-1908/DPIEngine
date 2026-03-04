@@ -1,4 +1,3 @@
-// Packet Lab DPI Engine — background.js (Manifest V3)
 
 const APP_SIGNATURES = {
   tiktok:    ['tiktok.com', 'tiktokcdn.com', 'tiktokv.com', 'musical.ly'],
@@ -19,10 +18,7 @@ let stats         = { total:0, forwarded:0, blocked:0 }
 let enabled       = true
 let packetCounter = 0
 
-// Track requestIds seen in onBeforeRequest
-// If the same requestId later appears in onErrorOccurred as BLOCKED,
-// we remove the FORWARD log and replace with BLOCK
-const pendingRequests = new Map()  // requestId -> packetIndex
+const pendingRequests = new Map()
 
 function getSignatures() {
   const sigs = { ...APP_SIGNATURES }
@@ -87,7 +83,6 @@ async function applyBlockingRules() {
   await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: removeIds, addRules })
 }
 
-// Step 1: onBeforeRequest — tentatively log as FORWARD, remember the packet index
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     try {
@@ -104,17 +99,13 @@ chrome.webRequest.onBeforeRequest.addListener(
       packets.push(pkt)
       if (packets.length > 2000) packets.shift()
 
-      // Remember this requestId so onErrorOccurred can flip it to BLOCK
       pendingRequests.set(details.requestId, packetCounter)
-
-      // Clean up after 10s in case onCompleted/onErrorOccurred never fires
       setTimeout(() => pendingRequests.delete(details.requestId), 10000)
     } catch(e) {}
   },
   { urls: ['<all_urls>'] }
 )
 
-// Step 2: onErrorOccurred — if ERR_BLOCKED_BY_CLIENT, flip the FORWARD log to BLOCK
 chrome.webRequest.onErrorOccurred.addListener(
   (details) => {
     try {
@@ -124,17 +115,13 @@ chrome.webRequest.onErrorOccurred.addListener(
       pendingRequests.delete(details.requestId)
 
       if (seq !== undefined) {
-        // Find the packet we logged as FORWARD and flip it
         const pkt = packets.find(p => p.seq === seq)
         if (pkt) {
           pkt.action = 'BLOCK'
-          // Fix stats: was counted as forwarded, should be blocked
           stats.forwarded--
           stats.blocked++
         }
       } else {
-        // Fallback: declarativeNetRequest can block before onBeforeRequest fires
-        // in some cases — log it fresh
         const hostname = new URL(details.url).hostname
         if (!hostname) return
         const app = classifyHost(hostname) || 'other'
@@ -219,4 +206,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
   handleMessage(msg, sendResponse)
   return true
+})
+
+// ── Auto-announce extension ID to any open Packet Lab tab ──
+function announceToTab(tabId) {
+  chrome.tabs.sendMessage(tabId, {
+    type: 'EXTENSION_ANNOUNCE',
+    extensionId: chrome.runtime.id
+  }).catch(() => {})
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete') return
+  const url = tab.url || ''
+  const isPacketLab = url.includes('localhost:5173') || url.includes('dpi-engine.vercel.app')
+  if (isPacketLab) announceToTab(tabId)
+})
+
+chrome.tabs.query({}, (tabs) => {
+  for (const tab of tabs) {
+    const url = tab.url || ''
+    const isPacketLab = url.includes('localhost:5173') || url.includes('dpi-engine.vercel.app')
+    if (isPacketLab) announceToTab(tab.id)
+  }
 })

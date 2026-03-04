@@ -1,10 +1,28 @@
 import { create } from 'zustand'
 
+const DEFAULT_RULES = {
+  tiktok: false, instagram: false, youtube: false, facebook: false,
+  twitter: false, netflix: false, discord: false, reddit: false,
+}
+const ZERO_STATS = { total: 0, forwarded: 0, blocked: 0, rate: 0 }
+
+// Dynamically discovered extension ID
+let discoveredExtensionId = import.meta.env.VITE_EXTENSION_ID || null
+
+// Listen for the extension announcing itself via content script
+window.addEventListener('message', (event) => {
+  if (event.data?.type === 'EXTENSION_ANNOUNCE' && event.data?.extensionId) {
+    discoveredExtensionId = event.data.extensionId
+    console.log('[PacketLab] Extension auto-discovered:', discoveredExtensionId)
+  }
+})
+
 async function extMessage(msg) {
   return new Promise((resolve) => {
     if (!window.chrome?.runtime?.sendMessage) return resolve(null)
+    const id = discoveredExtensionId
+    if (!id) return resolve(null)
     try {
-      const id = import.meta.env.VITE_EXTENSION_ID || 'klfhacifaepmeanlonkkcmphhfgelddh'
       chrome.runtime.sendMessage(id, msg, (res) => {
         if (chrome.runtime.lastError) return resolve(null)
         resolve(res || null)
@@ -13,19 +31,13 @@ async function extMessage(msg) {
   })
 }
 
-const DEFAULT_RULES = {
-  tiktok: false, instagram: false, youtube: false, facebook: false,
-  twitter: false, netflix: false, discord: false, reddit: false,
-}
-const ZERO_STATS = { total: 0, forwarded: 0, blocked: 0, rate: 0 }
-
 export const useProxyStore = create((set, get) => ({
   isOnline:      false,
   isConnected:   false,
   verifyStatus:  'idle',
-  rules:         { ...DEFAULT_RULES },  // includes custom domain keys too
-  customBlocked: [],                    // ordered list, newest first
-  customRules:   {},                    // { domain: true/false }
+  rules:         { ...DEFAULT_RULES },
+  customBlocked: [],
+  customRules:   {},
   packets:       [],
   stats:         { ...ZERO_STATS },
   pollTimer:     null,
@@ -63,7 +75,6 @@ export const useProxyStore = create((set, get) => ({
     })
   },
 
-  // Used for both built-in AND custom domain toggles
   toggleRule: async (app) => {
     const next = !get().rules[app]
     set(s => ({ rules: { ...s.rules, [app]: next } }))
@@ -76,7 +87,7 @@ export const useProxyStore = create((set, get) => ({
       set({
         customBlocked: res.customBlocked,
         customRules:   res.customRules,
-        rules:         res.rules,   // extension returns updated rules with new domain
+        rules:         res.rules,
       })
     }
   },
@@ -87,7 +98,7 @@ export const useProxyStore = create((set, get) => ({
       set({
         customBlocked: res.customBlocked,
         customRules:   res.customRules,
-        rules:         res.rules,   // extension returns rules with domain removed
+        rules:         res.rules,
       })
     }
   },
