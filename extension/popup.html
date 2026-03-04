@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 220px;
+      background: #0a0f1e;
+      color: #e2e8f0;
+      font-family: 'IBM Plex Mono', monospace;
+      padding: 14px;
+    }
+    .logo { font-size: 11px; font-weight: 700; color: #10b981; letter-spacing: 2px; margin-bottom: 4px; }
+    .sub  { font-size: 9px; color: #475569; margin-bottom: 12px; }
+    .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .stat-label { font-size: 9px; color: #64748b; }
+    .stat-value { font-size: 9px; color: #10b981; font-weight: 700; }
+    .divider { height: 1px; background: #1e293b; margin: 10px 0; }
+    .open-btn {
+      width: 100%; padding: 8px;
+      background: #10b98122; border: 1px solid #10b98144;
+      border-radius: 6px; color: #10b981;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      cursor: pointer;
+    }
+    .open-btn:hover { background: #10b98133; }
+    .status { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; }
+    .status-text { font-size: 9px; color: #10b981; font-weight: 700; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+  <div class="logo">⚡ PACKET LAB</div>
+  <div class="sub">DPI Engine Active</div>
+  <div class="status">
+    <div class="dot"></div>
+    <div class="status-text">INTERCEPTING TRAFFIC</div>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">TOTAL</span>
+    <span class="stat-value" id="total">0</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">BLOCKED</span>
+    <span class="stat-value" style="color:#ef4444" id="blocked">0</span>
+  </div>
+  <div class="divider"></div>
+  <button class="open-btn" id="openBtn">OPEN PACKET LAB →</button>
+  <script src="popup.js"></script>
+</body>
+</html>
