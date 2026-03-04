@@ -14,7 +14,7 @@ BLOCK_RESPONSE = (
     b"<div style='text-align:center'>"
     b"<div style='font-size:48px'>BLOCKED</div>"
     b"<div style='font-size:24px;margin:16px 0'>DPI BLOCKED</div>"
-    b"<div style='color:#64748b'>This site is blocked by Packet Lab DPI Engine</div>"
+    b"<div style='color:#64748b'>This site is blocked by DPI Engine</div>"
     b"</div></body></html>"
 )
 

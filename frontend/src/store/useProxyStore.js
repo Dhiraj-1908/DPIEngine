@@ -68,12 +68,17 @@ export const useProxyStore = create((set, get) => ({
 
   disconnect: () => {
     get().stopPolling()
-    set({
+    set(s => ({
       isOnline: false, isConnected: false, verifyStatus: 'idle',
-      stats: { ...ZERO_STATS }, packets: [], rules: { ...DEFAULT_RULES },
-      customBlocked: [], customRules: {}, lastSeq: 0,
-    })
+      stats: { ...ZERO_STATS }, packets: [], lastSeq: 0,
+      // Keep rules, customBlocked, customRules intact
+      rules: s.rules,
+      customBlocked: s.customBlocked,
+      customRules: s.customRules,
+    }))
   },
+
+  // ── Always update locally first, then sync to extension ──
 
   toggleRule: async (app) => {
     const next = !get().rules[app]
@@ -82,25 +87,25 @@ export const useProxyStore = create((set, get) => ({
   },
 
   addCustomBlock: async (domain) => {
-    const res = await extMessage({ type: 'ADD_CUSTOM_BLOCK', domain })
-    if (res?.ok) {
-      set({
-        customBlocked: res.customBlocked,
-        customRules:   res.customRules,
-        rules:         res.rules,
-      })
-    }
+    // Update locally always
+    set(s => ({
+      customBlocked: [domain, ...s.customBlocked.filter(d => d !== domain)],
+      customRules:   { ...s.customRules, [domain]: true },
+      rules:         { ...s.rules, [domain]: true },
+    }))
+    // Sync to extension if connected
+    await extMessage({ type: 'ADD_CUSTOM_BLOCK', domain })
   },
 
   removeCustomBlock: async (domain) => {
-    const res = await extMessage({ type: 'REMOVE_CUSTOM_BLOCK', domain })
-    if (res?.ok) {
-      set({
-        customBlocked: res.customBlocked,
-        customRules:   res.customRules,
-        rules:         res.rules,
-      })
-    }
+    // Update locally always
+    set(s => ({
+      customBlocked: s.customBlocked.filter(d => d !== domain),
+      customRules:   { ...s.customRules, [domain]: false },
+      rules:         { ...s.rules, [domain]: false },
+    }))
+    // Sync to extension if connected
+    await extMessage({ type: 'REMOVE_CUSTOM_BLOCK', domain })
   },
 
   startPolling: () => {

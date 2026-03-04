@@ -30,7 +30,6 @@ export default function RuleToggles() {
         )}
       </div>
 
-      {/* Single grid — built-in + custom together */}
       <div style={{
         padding: 16,
         display: 'grid',
@@ -78,9 +77,9 @@ export default function RuleToggles() {
             )
           })}
 
-        {/* Custom domains — newest first, same card + delete button */}
+        {/* Custom domains */}
         {customBlocked.map(d => {
-          const blocked = rules[d] !== false  // synced with rules in extension
+          const blocked = rules[d] !== false
           return (
             <div key={d} style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -103,9 +102,7 @@ export default function RuleToggles() {
                   </div>
                 </div>
               </div>
-
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                {/* Same toggle as built-in */}
                 <div onClick={() => toggleRule(d)} style={{
                   width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
                   background: blocked ? '#ef4444' : '#1a3050',
@@ -117,7 +114,6 @@ export default function RuleToggles() {
                     background: '#fff', transition: 'left 0.25s',
                   }} />
                 </div>
-                {/* Delete */}
                 <div onClick={() => removeCustomBlock(d)} style={{
                   width: 24, height: 24, borderRadius: 5, cursor: 'pointer',
                   background: '#ef444418', border: '1px solid #ef444440',
