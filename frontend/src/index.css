@@ -1,0 +1,53 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-base:      #050c18;
+  --bg-surface:   #090f1e;
+  --bg-card:      #0a1220;
+  --bg-hover:     #0f1a2e;
+
+  --border:       #0f2040;
+  --border-light: #1a3050;
+
+  --text-primary:   #e2e8f0;
+  --text-secondary: #64748b;
+  --text-muted:     #2a4060;
+
+  --accent-blue:   #2563eb;
+  --accent-cyan:   #0891b2;
+  --accent-purple: #7c3aed;
+  --accent-green:  #059669;
+  --accent-red:    #dc2626;
+  --accent-amber:  #d97706;
+
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar       { width: 5px; height: 5px; background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+.react-flow__background { background: var(--bg-card) !important; }
+.react-flow__edge-path  { stroke: #1a3050 !important; stroke-width: 1.5px; }
+.react-flow__edge.animated .react-flow__edge-path { stroke: #2563eb !important; }
+
+@keyframes fadeUp   { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+@keyframes pulse    { 0%,100% { opacity:1 } 50% { opacity:0.35 } }
+@keyframes scanline { 0% { top: 0 } 100% { top: 100% } }
+@keyframes blink    { 50% { opacity: 0 } }
+
+.fade-up { animation: fadeUp 0.35s ease forwards; }
