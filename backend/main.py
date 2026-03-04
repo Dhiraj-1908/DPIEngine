@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import analyze, ip_intel
-import datetime
+import datetime, asyncio, httpx
 
 app = FastAPI(title="DPI Engine API", version="2.0")
 
@@ -17,6 +17,18 @@ app.add_middleware(
 
 app.include_router(analyze.router)
 app.include_router(ip_intel.router)
+
+@app.on_event("startup")
+async def keep_alive():
+    async def ping():
+        while True:
+            await asyncio.sleep(60 * 20)  # every 20 minutes
+            try:
+                async with httpx.AsyncClient() as client:
+                    await client.get("https://dpiengine.onrender.com/health", timeout=10)
+            except:
+                pass
+    asyncio.create_task(ping())
 
 @app.get("/health")
 def health():
