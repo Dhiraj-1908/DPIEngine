@@ -1,5 +1,5 @@
 import { useIPStore } from '../../store/useIPStore'
-import { fetchIPIntel, fetchMyIP } from '../../utils/ipService'
+import { fetchIPIntel, fetchMyIP, fetchPreciseLocation } from '../../utils/ipService'
 import { isValidIPv4 } from '../../utils/ipUtils'
 
 export default function IPSearchBar() {
@@ -24,10 +24,28 @@ export default function IPSearchBar() {
     reset()
     setIsScanning(true)
     try {
+      // Fetch IP info and GPS simultaneously
       const ip = await fetchMyIP()
       setInputIP(ip)
-      const data = await fetchIPIntel(ip)
-      setResult(data)
+
+      const [data, gps] = await Promise.allSettled([
+        fetchIPIntel(ip),
+        fetchPreciseLocation(),
+      ])
+
+      if (data.status === 'rejected') throw new Error(data.reason.message)
+
+      const result = data.value
+
+      // If GPS succeeded, override lat/lon with precise coordinates
+      if (gps.status === 'fulfilled') {
+        result.lat = gps.value.lat
+        result.lon = gps.value.lon
+        result.preciseLocation = true
+        result.accuracyMeters  = Math.round(gps.value.accuracy)
+      }
+
+      setResult(result)
     } catch (e) {
       setError(e.message)
     } finally {
