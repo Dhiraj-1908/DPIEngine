@@ -43,18 +43,6 @@ export default function ProxyStatusBanner() {
       {/* Right side */}
       {!isConnected ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Setup steps */}
-          <div style={{
-            background: 'var(--bg-card)', border: '1px solid var(--border)',
-            borderRadius: 7, padding: '8px 14px',
-            fontFamily: 'var(--font-mono)', fontSize: 9,
-            color: 'var(--text-secondary)', lineHeight: 1.8,
-          }}>
-            <div style={{ color: '#f59e0b', marginBottom: 4 }}>SETUP GUIDE</div>
-            <div>1. Download &amp; install the extension below</div>
-            <div>2. Chrome → Extensions → Load unpacked</div>
-            <div>3. Click Connect Extension →</div>
-          </div>
 
           {/* Connect button */}
           <button
@@ -77,7 +65,7 @@ export default function ProxyStatusBanner() {
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#10b981', opacity: 0.7 }}>
-            Chrome Extension ✓
+            Chrome Extension Connected ✓
           </div>
           {/* Disconnect button */}
           <button

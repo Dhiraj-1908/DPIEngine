@@ -30,9 +30,9 @@ export default function ProxyPage() {
       {/* Stats — always visible, zeros when disconnected */}
       <ProxyStatsBar />
 
-      {/* Main content — layout shifts based on connection state */}
+      {/* Main content */}
       {isConnected ? (
-        // Connected: rules + log side by side, how it works below full width
+        // Connected: rules + log side by side, how it works below
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16, alignItems: 'start' }}>
             <RuleToggles />
@@ -41,11 +41,8 @@ export default function ProxyPage() {
           <HowItWorksPanel />
         </>
       ) : (
-        // Disconnected: how it works + rules stacked, no log
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
-          <RuleToggles />
-          <HowItWorksPanel />
-        </div>
+        // Disconnected: only how it works, no rules (nothing to block yet)
+        <HowItWorksPanel />
       )}
 
     </div>
