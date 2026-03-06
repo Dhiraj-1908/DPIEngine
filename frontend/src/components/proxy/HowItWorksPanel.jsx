@@ -65,13 +65,7 @@ export default function HowItWorksPanel() {
         padding: '10px 16px', borderTop: '1px solid var(--border)',
         display: 'flex', gap: 8, flexWrap: 'wrap',
       }}>
-        {['webRequest API', 'declarativeNetRequest', 'chrome.storage', 'chrome.runtime.sendMessage', 'SNI Classification', 'No TLS Decryption'].map(tag => (
-          <span key={tag} style={{
-            fontFamily: 'var(--font-mono)', fontSize: 8,
-            color: 'var(--text-muted)', background: 'var(--bg-surface)',
-            border: '1px solid var(--border)', padding: '2px 8px', borderRadius: 4,
-          }}>{tag}</span>
-        ))}
+       
       </div>
     </div>
   )
