@@ -45,8 +45,6 @@ It's a 4-page tool built for networking students, developers, and anyone curious
 
 > Analyze multiple domains simultaneously. Each domain is run through a simulated enterprise DPI pipeline: 5-tuple flow hashing → load balancer pool assignment → FastPath thread assignment → TLS probe → BLOCK or FORWARD decision. The server locations map pins each resolved IP geographically.
 
-![DPI Playground](screenshot_dpi_playground.png)
-
 **What you're seeing:**
 - **Pipeline visualization** (top-left): Load balancer pools (LB-0, LB-1) distributing flows across FastPath threads (FP-1, FP-2, FP-3)
 - **Live terminal** (right): Real-time SNI classification log — `SNI=tiktok.com app=tiktok → DROPED`, `SNI=facebook.com → FWD`
@@ -59,8 +57,6 @@ It's a 4-page tool built for networking students, developers, and anyone curious
 
 > Look up any IP address and get a complete intelligence report: physical location on a map, ISP and ASN identification, VPN/proxy/Tor/hosting detection, and a computed threat score.
 
-![IP Intelligence](screenshot_ip_intelligence.png)
-
 **What you're seeing:**
 - **Threat Score gauge**: Score of 0 — CLEAN. Computed from `proxy (+35)`, `hosting (+15)`, `mobile (-10)` signals
 - **Location map**: IP `103.87.48.113` pinned to Delhi, India at city-level zoom (orange marker = IP-based, not GPS)
@@ -72,8 +68,6 @@ It's a 4-page tool built for networking students, developers, and anyone curious
 ### ⚡ Live Proxy Analyzer — Real-Time Browser Traffic Interception
 
 > Connect the Chrome extension and watch every HTTP/HTTPS request your browser makes, classified by app in real time. Toggle blocking rules on/off — YouTube blocked below, showing 14 packets dropped before TCP ever connects.
-
-![Live Proxy](screenshot_live_proxy.png)
 
 **What you're seeing:**
 - **Extension status**: Chrome Extension Connected — DPI Engine Active, intercepting via `webRequest` API
@@ -88,7 +82,6 @@ It's a 4-page tool built for networking students, developers, and anyone curious
 
 > Trace a domain that's actively blocked by the DPI engine. The animated Canvas graph shows packets exploding at the firewall wall — downstream nodes fade to near-invisible, and the browser node pulses red.
 
-![Network Tracer Blocked](screenshot_tracer_blocked.png)
 
 **What you're seeing:**
 - **Status banner**: `youtube.com is BLOCKED — rule: youtube — Packets dropped at browser edge before TCP connects`
@@ -101,8 +94,6 @@ It's a 4-page tool built for networking students, developers, and anyone curious
 ### 🌐 Network Tracer — Live Capture Graph
 
 > Trace an active domain with the extension connected. The 8-node graph animates in real time as packets flow through each layer of the network path — DNS resolver, TLS handshake, auth state, IP geolocation, CDN edge, origin server, packet stream.
-
-![Network Tracer Live](screenshot_tracer_live.png)
 
 **What you're seeing:**
 - **Live counters** (top): 36 requests · 34 responses · 14 API calls · 4 media segments
@@ -117,8 +108,6 @@ It's a 4-page tool built for networking students, developers, and anyone curious
 ### 🤖 AI Explain — 10-Step Network Analysis Report
 
 > After tracing a domain, click AI Explain for a full technical breakdown. The AI streams an explanation of every layer — from browser URL parsing through DNS, TCP, TLS, CDN routing, to the final server response — with actual data from your trace injected inline.
-
-![AI Explain](screenshot_ai_explain.png)
 
 **What you're seeing:**
 - **Report header**: `youtube.com` with live badges — IP `142.251.220.46`, RTT `45.97ms`, TLS `TLSv1.3`, CDN `Google Global Cache`, HTTP `200`, Requests `67`
